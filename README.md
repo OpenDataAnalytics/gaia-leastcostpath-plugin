@@ -6,6 +6,7 @@ analyzes the least cost path, including:
 #### Documentation
 
 Documentation for Gaia can be found at http://gaia.readthedocs.org.
+Documentation for this plugin can be found at http://gaia-leastcostpath-plugin.readthedocs.org.
 
 #### Installation
 

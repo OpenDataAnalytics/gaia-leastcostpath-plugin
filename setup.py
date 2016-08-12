@@ -19,7 +19,7 @@
 from setuptools import setup, find_packages
 
 setup(
-  name="gaia-least-cost-plugin",
+  name="gaia-leastcostpath-plugin",
   version="0.0",
   description="""Gaia plugin""",
   author="Essam",
@@ -28,7 +28,7 @@ setup(
   include_package_data=True,
   entry_points={
     'gaia.plugins': [
-            "least_cost_path_plugin = gaia_least_cost_path_plugin.least_cost_path_plugin",
+            "gaia_leastcostpath.processes = gaia_leastcostpath.processes",
         ]
   }
 )
