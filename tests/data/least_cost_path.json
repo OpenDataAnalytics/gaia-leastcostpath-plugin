@@ -1,5 +1,5 @@
 {
-  "_type": "gaia_least_cost_path_plugin.least_cost_path_plugin.LeastCostProcess",
+  "_type": "gaia_leastcostpath.processes.LeastCostProcess",
   "inputs": [
     {
       "name": "input",

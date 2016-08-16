@@ -19,10 +19,8 @@
 import json
 import os
 import unittest
-import pysal
 from gaia import formats
-from gaia.geo.geo_inputs import RasterFileIO
-from gaia_least_cost_path_plugin.least_cost_path_plugin import LeastCostProcess
+from gaia_leastcostpath.processes import LeastCostProcess
 
 testfile_path = os.path.join(os.path.dirname(
     os.path.realpath(__file__)), '../data')
@@ -40,7 +38,8 @@ class TestLeastCostProcessors(unittest.TestCase):
         start_point = [-71.590526, 42.659566],
         end_point = [-122.817426, 46.561380]
 
-        process = LeastCostProcess(inputs=[{ "uri": uri, "start": start_point[0], "end": end_point }])
+        process = LeastCostProcess(inputs=[
+            {"uri": uri, "start": start_point[0], "end": end_point}])
         try:
             process.compute()
             with open(os.path.join(

@@ -16,32 +16,36 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 ##############################################################################
-import gaia.formats as formats
-import gdal, ogr, os
+import gdal
+import os
+import ogr
 import numpy as np
 import itertools
-import geopandas
-
-from gaia.inputs import GaiaIO
 from gaia.gaia_process import GaiaProcess
-from gaia_least_cost_path_plugin import config
 from gaia.geo.geo_inputs import VectorFileIO
 from skimage.graph import route_through_array
-from math import sqrt,ceil
+from math import sqrt, ceil
+try:
+    import osr
+except ImportError:
+    from osgeo import osr
+import gaia.formats as formats
 
 
 class LeastCostProcess(GaiaProcess):
+    """
+    Least cost path analysis.
+    """
 
-    """
-        Least cost path analysis.
-    """
-    default_output = formats.VECTOR
+    default_output = formats.JSON
 
     def __init__(self, **kwargs):
         super(LeastCostProcess, self).__init__(**kwargs)
 
         if not self.output:
-            self.output = VectorFileIO(name='result', uri=self.get_outpath().replace('.json', '.geojson'))
+            self.output = VectorFileIO(
+                name='result',
+                uri=self.get_outpath())
         self.validate()
 
         if self.inputs:
@@ -49,8 +53,7 @@ class LeastCostProcess(GaiaProcess):
             self.end_point = self.inputs[0]['end']
             self.raster_layer = self.inputs[0]['uri']
 
-
-    def pixelOffset2coord(self, rasterfn, xOffset, yOffset):
+    def pixel_offset2coord(self, rasterfn, xOffset, yOffset):
         raster = gdal.Open(rasterfn)
         geotransform = raster.GetGeoTransform()
         originX = geotransform[0]
@@ -69,11 +72,10 @@ class LeastCostProcess(GaiaProcess):
 
         count = 0
         roadList = np.where(array == pixelValue)
-        multipoint = ogr.Geometry(ogr.wkbMultiLineString)
         pointDict = {}
         for indexY in roadList[0]:
             indexX = roadList[1][count]
-            Xcoord, Ycoord = self.pixelOffset2coord(rasterfn, indexX, indexY)
+            Xcoord, Ycoord = self.pixel_offset2coord(rasterfn, indexX, indexY)
             pointDict[count] = (Xcoord, Ycoord)
             count += 1
 
@@ -100,13 +102,13 @@ class LeastCostProcess(GaiaProcess):
             self.output.create_output_dir(outSHPfn)
 
         outDataSource = shpDriver.CreateDataSource(outSHPfn)
-        outLayer = outDataSource.CreateLayer(outSHPfn, geom_type=ogr.wkbMultiLineString )
+        outLayer = outDataSource.CreateLayer(outSHPfn,
+                                             geom_type=ogr.wkbMultiLineString)
 
         featureDefn = outLayer.GetLayerDefn()
         outFeature = ogr.Feature(featureDefn)
         outFeature.SetGeometry(multiline)
         outLayer.CreateFeature(outFeature)
-
 
     def raster_to_array(self, raster):
         raster = gdal.Open(raster)
@@ -114,7 +116,7 @@ class LeastCostProcess(GaiaProcess):
         array = band.ReadAsArray()
         return array
 
-    def coord2pixelOffset(self, rasterfn, x, y):
+    def coord2pixeloffset(self, rasterfn, x, y):
         raster = gdal.Open(rasterfn)
         geotransform = raster.GetGeoTransform()
         originX = geotransform[0]
@@ -125,19 +127,26 @@ class LeastCostProcess(GaiaProcess):
         yOffset = int((y - originY)/pixelHeight)
         return xOffset, yOffset
 
-    def createPath(self, raster, costSurfaceArray, start, end):
+    def create_path(self, raster, costSurfaceArray, start, end):
 
         # coordinates to array index
         startCoordX = start[0]
         startCoordY = start[1]
-        startIndexX, startIndexY = self.coord2pixelOffset(raster, startCoordX, startCoordY)
+        startIndexX, startIndexY = self.coord2pixeloffset(
+            raster, startCoordX, startCoordY)
 
         stopCoordX = end[0]
         stopCoordY = end[1]
-        stopIndexX, stopIndexY = self.coord2pixelOffset(raster, stopCoordX, stopCoordY)
+        stopIndexX, stopIndexY = self.coord2pixeloffset(
+            raster, stopCoordX, stopCoordY)
 
         # create path
-        indices, weight = route_through_array(costSurfaceArray, (startIndexY, startIndexX), (stopIndexY, stopIndexX), geometric=True, fully_connected=True)
+        indices, weight = route_through_array(
+            costSurfaceArray,
+            (startIndexY, startIndexX),
+            (stopIndexY, stopIndexX),
+            geometric=True,
+            fully_connected=True)
         indices = np.array(indices).T
         path = np.zeros_like(costSurfaceArray)
         path[indices[0], indices[1]] = 1
@@ -155,7 +164,8 @@ class LeastCostProcess(GaiaProcess):
 
         driver = gdal.GetDriverByName('GTiff')
         outRaster = driver.Create(newRasterfn, cols, rows, gdal.GDT_Byte)
-        outRaster.SetGeoTransform((originX, pixelWidth, 0, originY, 0, pixelHeight))
+        outRaster.SetGeoTransform(
+            (originX, pixelWidth, 0, originY, 0, pixelHeight))
         outband = outRaster.GetRasterBand(1)
         outband.WriteArray(array)
         outRasterSRS = osr.SpatialReference()
@@ -163,13 +173,14 @@ class LeastCostProcess(GaiaProcess):
         outRaster.SetProjection(outRasterSRS.ExportToWkt())
         outband.FlushCache()
 
-    def calculatePath(self, raster, start, end):
+    def calculate_path(self, raster, start, end):
         costSurfaceArray = self.raster_to_array(raster)
-        pathArray = self.createPath(raster, costSurfaceArray, start, end)
+        pathArray = self.create_path(raster, costSurfaceArray, start, end)
         self.array2shp(pathArray, self.output.uri, raster,  1)
 
     def compute(self):
-        data = self.calculatePath(self.raster_layer, self.start_point, self.end_point)
+        self.calculate_path(
+            self.raster_layer, self.start_point, self.end_point)
 
 
 PLUGIN_CLASS_EXPORTS = [
