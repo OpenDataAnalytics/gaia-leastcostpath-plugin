@@ -1,7 +1,12 @@
 ## gaia-least-cost-path-plugin
 
 This is a plugin for Gaia (https://github.com/OpenDataAnalytics/gaia) that
-analyzes the least cost path, including:
+computes the 'least cost path' between two points based on a grid of cost values.
+Least cost path analysis calculates the most cost-effective route between a source and destination.
+Cost can be a function of elevation, time, or any other criteria that is represented as values on a raster grid, where a higher value indicates a higher cost.
+As part of the analysis, the 8 neighbors of a grid cell are evaluated and the path moves to the cell with the smallest value.
+This evaluation is repeated until the source and destination are connected.  The output is a vector line that connects the source and destination points.
+
 
 #### Documentation
 

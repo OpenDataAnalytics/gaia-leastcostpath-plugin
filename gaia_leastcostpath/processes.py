@@ -34,12 +34,17 @@ import gaia.formats as formats
 
 class LeastCostProcess(GaiaProcess):
     """
-    Least cost path analysis.
+    Process to calculate the least cost path between
+    two points over a raster grid.
     """
 
     default_output = formats.JSON
 
     def __init__(self, **kwargs):
+        """
+        Create an instance of LeastCostProcess class.
+        :param kwargs:
+        """
         super(LeastCostProcess, self).__init__(**kwargs)
 
         if not self.output:
@@ -53,18 +58,14 @@ class LeastCostProcess(GaiaProcess):
             self.end_point = self.inputs[0]['end']
             self.raster_layer = self.inputs[0]['uri']
 
-    def pixel_offset2coord(self, rasterfn, xOffset, yOffset):
-        raster = gdal.Open(rasterfn)
-        geotransform = raster.GetGeoTransform()
-        originX = geotransform[0]
-        originY = geotransform[3]
-        pixelWidth = geotransform[1]
-        pixelHeight = geotransform[5]
-        coordX = originX+pixelWidth*xOffset
-        coordY = originY+pixelHeight*yOffset
-        return coordX, coordY
-
     def array2shp(self, array, outSHPfn, rasterfn, pixelValue):
+        """
+        Convert a grid array representation of the path into a shapefile
+        :param array: least cost path as numeric grid array
+        :param outSHPfn: output shapefile
+        :param rasterfn: raster file used to calculate path
+        :param pixelValue: cell value of path in grid array
+        """
         raster = gdal.Open(rasterfn)
         geotransform = raster.GetGeoTransform()
         pixelWidth = geotransform[1]
@@ -111,12 +112,24 @@ class LeastCostProcess(GaiaProcess):
         outLayer.CreateFeature(outFeature)
 
     def raster_to_array(self, raster):
+        """
+        Convert a raster grid into an array
+        :param raster: input raster
+        :return: array
+        """
         raster = gdal.Open(raster)
         band = raster.GetRasterBand(1)
         array = band.ReadAsArray()
         return array
 
     def coord2pixeloffset(self, rasterfn, x, y):
+        """
+        Convert lat/long coordinates to pixel coordinates
+        :param rasterfn: raster file
+        :param x: longitude
+        :param y: latitude
+        :return:
+        """
         raster = gdal.Open(rasterfn)
         geotransform = raster.GetGeoTransform()
         originX = geotransform[0]
@@ -127,7 +140,33 @@ class LeastCostProcess(GaiaProcess):
         yOffset = int((y - originY)/pixelHeight)
         return xOffset, yOffset
 
+    def pixel_offset2coord(self, rasterfn, xOffset, yOffset):
+        """
+        Convert pixel coordinates to lat/long coordinates
+        :param rasterfn: raster dataset
+        :param xOffset:  longitude offset
+        :param yOffset: latitude offset
+        :return: coordinates
+        """
+        raster = gdal.Open(rasterfn)
+        geotransform = raster.GetGeoTransform()
+        originX = geotransform[0]
+        originY = geotransform[3]
+        pixelWidth = geotransform[1]
+        pixelHeight = geotransform[5]
+        coordX = originX+pixelWidth*xOffset
+        coordY = originY+pixelHeight*yOffset
+        return coordX, coordY
+
     def create_path(self, raster, costSurfaceArray, start, end):
+        """
+        Calculate the least cost path
+        :param raster: Raster file
+        :param costSurfaceArray: raster file as numeric array
+        :param start: start point
+        :param end: end point
+        :return: least cost path as grid array
+        """
 
         # coordinates to array index
         startCoordX = start[0]
@@ -152,33 +191,22 @@ class LeastCostProcess(GaiaProcess):
         path[indices[0], indices[1]] = 1
         return path
 
-    def array_to_raster(self, newRasterfn, rasterfn, array):
-        raster = gdal.Open(rasterfn)
-        geotransform = raster.GetGeoTransform()
-        originX = geotransform[0]
-        originY = geotransform[3]
-        pixelWidth = geotransform[1]
-        pixelHeight = geotransform[5]
-        cols = array.shape[1]
-        rows = array.shape[0]
-
-        driver = gdal.GetDriverByName('GTiff')
-        outRaster = driver.Create(newRasterfn, cols, rows, gdal.GDT_Byte)
-        outRaster.SetGeoTransform(
-            (originX, pixelWidth, 0, originY, 0, pixelHeight))
-        outband = outRaster.GetRasterBand(1)
-        outband.WriteArray(array)
-        outRasterSRS = osr.SpatialReference()
-        outRasterSRS.ImportFromWkt(raster.GetProjectionRef())
-        outRaster.SetProjection(outRasterSRS.ExportToWkt())
-        outband.FlushCache()
-
     def calculate_path(self, raster, start, end):
+        """
+        Convert the input raster into an array and calculate the least
+        cost path as an array
+        :param raster: raster file
+        :param start: start point
+        :param end: end point
+        """
         costSurfaceArray = self.raster_to_array(raster)
         pathArray = self.create_path(raster, costSurfaceArray, start, end)
         self.array2shp(pathArray, self.output.uri, raster,  1)
 
     def compute(self):
+        """
+        Perform the process calculations
+        """
         self.calculate_path(
             self.raster_layer, self.start_point, self.end_point)
 
