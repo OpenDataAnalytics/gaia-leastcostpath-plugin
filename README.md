@@ -20,7 +20,7 @@ Documentation for this plugin can be found at http://gaia-leastcostpath-plugin.r
 
 #### Inputs
   - A raster image
-  - Start and end point
+  - Either two vector datasets containing one point each, or one vector dataset containing two points.
 
 #### License
 

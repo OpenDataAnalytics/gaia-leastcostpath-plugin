@@ -20,6 +20,8 @@ import json
 import os
 import unittest
 from gaia import formats
+from gaia.geo import RasterFileIO
+from gaia.geo.geo_inputs import FeatureIO
 from gaia_leastcostpath.processes import LeastCostProcess
 
 testfile_path = os.path.join(os.path.dirname(
@@ -32,14 +34,21 @@ class TestLeastCostProcessors(unittest.TestCase):
         """
         Test LeastCostProcess for raster inputs
         """
+        raster = RasterFileIO(uri=os.path.join(testfile_path, 'globalprecip.tif'))
+        vector1 = FeatureIO(
+            features=[{"geometry":
+                          {"type": "Point", "coordinates": [-71.590526, 42.659566]},
+                      "properties":{}
+                      }]
+        )
+        vector2 = FeatureIO(
+            features=[{"geometry":
+                          {"type": "Point", "coordinates": [-122.817426, 46.561380]},
+                      "properties":{}
+                      }]
+        )
 
-        uri = os.path.join(testfile_path, 'globalprecip.tif')
-
-        start_point = [-71.590526, 42.659566],
-        end_point = [-122.817426, 46.561380]
-
-        process = LeastCostProcess(inputs=[
-            {"uri": uri, "start": start_point[0], "end": end_point}])
+        process = LeastCostProcess(inputs=[raster, vector1, vector2])
         try:
             process.compute()
             with open(os.path.join(

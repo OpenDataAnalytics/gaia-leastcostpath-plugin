@@ -1,0 +1,24 @@
+{
+  "_type": "gaia_leastcostpath.processes.LeastCostProcess",
+  "inputs": [
+      {
+          "name": "raster",
+          "_type": "gaia.geo.geo_inputs.RasterFileIO",
+          "uri": "{basepath}/globalprecip.tif"
+      },
+      {
+          "name": "start",
+          "_type": "gaia.geo.geo_inputs.FeatureIO",
+          "features": [
+            {"geometry": {"type": "Point", "coordinates": [-71.590526, 42.659566]}, "properties":{}}
+          ]
+      },
+      {
+          "name": "end",
+          "_type": "gaia.geo.geo_inputs.FeatureIO",
+          "features": [
+            {"geometry": {"type": "Point", "coordinates": [-122.817426, 46.561380]}, "properties":{}}
+          ]
+      }
+  ]
+}

@@ -22,6 +22,7 @@ import ogr
 import numpy as np
 import itertools
 from gaia.gaia_process import GaiaProcess
+from gaia.geo import get_dataset
 from gaia.geo.geo_inputs import VectorFileIO
 from skimage.graph import route_through_array
 from math import sqrt, ceil
@@ -53,11 +54,6 @@ class LeastCostProcess(GaiaProcess):
                 uri=self.get_outpath())
         self.validate()
 
-        if self.inputs:
-            self.start_point = self.inputs[0]['start']
-            self.end_point = self.inputs[0]['end']
-            self.raster_layer = self.inputs[0]['uri']
-
     def array2shp(self, array, outSHPfn, rasterfn, pixelValue):
         """
         Convert a grid array representation of the path into a shapefile
@@ -66,7 +62,7 @@ class LeastCostProcess(GaiaProcess):
         :param rasterfn: raster file used to calculate path
         :param pixelValue: cell value of path in grid array
         """
-        raster = gdal.Open(rasterfn)
+        raster = get_dataset(rasterfn.uri)
         geotransform = raster.GetGeoTransform()
         pixelWidth = geotransform[1]
         maxDistance = ceil(sqrt(2*pixelWidth*pixelWidth))
@@ -111,13 +107,13 @@ class LeastCostProcess(GaiaProcess):
         outFeature.SetGeometry(multiline)
         outLayer.CreateFeature(outFeature)
 
-    def raster_to_array(self, raster):
+    def raster_to_array(self, rasterfn):
         """
         Convert a raster grid into an array
         :param raster: input raster
         :return: array
         """
-        raster = gdal.Open(raster)
+        raster = get_dataset(rasterfn.uri)
         band = raster.GetRasterBand(1)
         array = band.ReadAsArray()
         return array
@@ -130,7 +126,7 @@ class LeastCostProcess(GaiaProcess):
         :param y: latitude
         :return:
         """
-        raster = gdal.Open(rasterfn)
+        raster = get_dataset(rasterfn.uri)
         geotransform = raster.GetGeoTransform()
         originX = geotransform[0]
         originY = geotransform[3]
@@ -148,7 +144,7 @@ class LeastCostProcess(GaiaProcess):
         :param yOffset: latitude offset
         :return: coordinates
         """
-        raster = gdal.Open(rasterfn)
+        raster = get_dataset(rasterfn.uri)
         geotransform = raster.GetGeoTransform()
         originX = geotransform[0]
         originY = geotransform[3]
@@ -169,13 +165,13 @@ class LeastCostProcess(GaiaProcess):
         """
 
         # coordinates to array index
-        startCoordX = start[0]
-        startCoordY = start[1]
+        startCoordX = start.x
+        startCoordY = start.y
         startIndexX, startIndexY = self.coord2pixeloffset(
             raster, startCoordX, startCoordY)
 
-        stopCoordX = end[0]
-        stopCoordY = end[1]
+        stopCoordX = end.x
+        stopCoordY = end.y
         stopIndexX, stopIndexY = self.coord2pixeloffset(
             raster, stopCoordX, stopCoordY)
 
@@ -207,8 +203,14 @@ class LeastCostProcess(GaiaProcess):
         """
         Perform the process calculations
         """
+        if len(self.inputs) == 3:
+            start_point = self.inputs[1].read().iloc[0].geometry.centroid
+            end_point = self.inputs[2].read().iloc[0].geometry.centroid
+        else:
+            start_point = self.inputs[1].read().iloc[0].geometry.centroid
+            end_point = self.inputs[1].read().iloc[1].geometry.centroid
         self.calculate_path(
-            self.raster_layer, self.start_point, self.end_point)
+            self.inputs[0], start_point, end_point)
 
 
 PLUGIN_CLASS_EXPORTS = [
