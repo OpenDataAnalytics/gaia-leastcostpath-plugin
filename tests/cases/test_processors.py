@@ -29,23 +29,26 @@ testfile_path = os.path.join(os.path.dirname(
 
 
 class TestLeastCostProcessors(unittest.TestCase):
-
     def test_process_least_cost_path(self):
         """
         Test LeastCostProcess for raster inputs
         """
-        raster = RasterFileIO(uri=os.path.join(testfile_path, 'globalprecip.tif'))
+        raster = RasterFileIO(
+            uri=os.path.join(testfile_path, 'globalprecip.tif'))
         vector1 = FeatureIO(
             features=[{"geometry":
-                          {"type": "Point", "coordinates": [-71.590526, 42.659566]},
-                      "properties":{}
-                      }]
+                      {"type": "Point",
+                       "coordinates": [-71.590526, 42.659566]
+                       },
+                       "properties": {}
+                       }]
         )
         vector2 = FeatureIO(
             features=[{"geometry":
-                          {"type": "Point", "coordinates": [-122.817426, 46.561380]},
-                      "properties":{}
-                      }]
+                      {"type": "Point",
+                       "coordinates": [-122.817426, 46.561380]},
+                       "properties": {}
+                       }]
         )
 
         process = LeastCostProcess(inputs=[raster, vector1, vector2])
