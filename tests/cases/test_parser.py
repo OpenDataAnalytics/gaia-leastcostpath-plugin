@@ -30,10 +30,10 @@ testfile_path = os.path.join(os.path.dirname(
 class TestLeastCostViaParser(unittest.TestCase):
     """Tests for the Gaia Least Cost plugin via Parser"""
 
-    def test_process_least_cost_path(self):
+    def test_process_least_cost_path_2vectors(self):
         """Test Least Cost Process"""
         with open(os.path.join(testfile_path,
-                               'least_cost_path.json')) as inf:
+                               'least_cost_path_2vectors.json')) as inf:
             body_text = inf.read().replace('{basepath}', testfile_path)
         process = json.loads(body_text, object_hook=deserialize)
         try:
@@ -52,3 +52,27 @@ class TestLeastCostViaParser(unittest.TestCase):
         finally:
             if process:
                 process.purge()
+
+
+def test_process_least_cost_path_1vector_2points(self):
+    """Test Least Cost Process"""
+    with open(os.path.join(testfile_path,
+                           'least_cost_path_1vector.json')) as inf:
+        body_text = inf.read().replace('{basepath}', testfile_path)
+    process = json.loads(body_text, object_hook=deserialize)
+    try:
+        process.compute()
+        output = json.loads(process.output.read(format=formats.JSON))
+        with open(os.path.join(
+                testfile_path,
+                'least_cost_path_process_results.json')) as gj:
+            expected_json = json.load(gj)
+        self.assertIn('features', output)
+
+        self.assertEquals(len(expected_json['features']),
+                          len(output['features']))
+        self.assertIsNotNone(process.id)
+        self.assertIn(process.id, process.output.uri)
+    finally:
+        if process:
+            process.purge()
