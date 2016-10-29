@@ -16,6 +16,8 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 ##############################################################################
+from gaia import types
+
 import gdal
 import os
 import ogr
@@ -38,6 +40,18 @@ class LeastCostProcess(GaiaProcess):
     Process to calculate the least cost path between
     two points over a raster grid.
     """
+
+    #: Tuple of required inputs; name, type , max # of each; None = no max
+    required_inputs = [
+        {'description': 'Raster dataset',
+         'type': types.RASTER,
+         'max': 1
+         },
+        {'description': 'Start/end point dataset(s)',
+         'type': types.VECTOR,
+         'max': 2
+         }
+    ]
 
     default_output = formats.JSON
 
